@@ -1,11 +1,3 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
 <title>Be Bloom</title>
 <style>
   :root {
@@ -405,6 +397,10 @@
         <div class="field"><label>ウエスト</label><input type="number" step="0.1" inputmode="decimal" id="inWaist" placeholder="cm"></div>
         <div class="field"><label>体脂肪率</label><input type="number" step="0.1" inputmode="decimal" id="inFat" placeholder="%"></div>
       </div>
+      <div class="field">
+        <label>📝 ボディメモ</label>
+        <textarea id="inBodyMemo" placeholder="筋肉痛、体の変化など自由に記録..."></textarea>
+      </div>
       <button class="btn" id="saveBody">保存する</button>
     </div>
 
@@ -499,6 +495,10 @@
       <div class="field" style="margin-bottom:10px;">
         <textarea id="inGratitude" placeholder="今日ありがとうと感じたこと、うれしかったことを書きましょう。"></textarea>
       </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>📝 メンタルメモ</label>
+        <textarea id="inMentalMemo" placeholder="気分のUP/DOWNについて自由に記録..."></textarea>
+      </div>
       <button class="btn" id="saveMental">気分・ストレス・日記を保存</button>
     </div>
   </section>
@@ -534,6 +534,13 @@
       <div class="bgm-toggle">
         <label class="switch"><input type="checkbox" id="bgmToggle" checked><span class="track"></span></label>
         <span>🎵 自然音BGM</span>
+      </div>
+      <div class="chips" id="bgmSounds" style="justify-content:center;margin-top:14px;">
+        <button class="chip green" data-sound="forest">🌲 森林</button>
+        <button class="chip green" data-sound="stream">💧 せせらぎ</button>
+        <button class="chip green" data-sound="birds">🐦 鳥の声</button>
+        <button class="chip green" data-sound="waves">🌊 波の音</button>
+        <button class="chip green" data-sound="breeze">🍃 そよ風</button>
       </div>
     </div>
   </section>
@@ -754,6 +761,7 @@
     $("inWeight").value = b.weight != null ? b.weight : "";
     $("inWaist").value = b.waist != null ? b.waist : "";
     $("inFat").value = b.fat != null ? b.fat : "";
+    $("inBodyMemo").value = b.bodyMemo || "";
 
     var s = e.sleep || {};
     $("inBed").value = s.bed || "";
@@ -840,6 +848,7 @@
     $("stressVal").textContent = stress;
     updateStressAlert(stress);
     $("inGratitude").value = m.gratitude || "";
+    $("inMentalMemo").value = m.mentalMemo || "";
   }
   function updateStressAlert(v) {
     $("stressAlert").classList.toggle("show", v >= 7);
@@ -893,6 +902,7 @@
     e.body.weight = numOrNull($("inWeight").value);
     e.body.waist = numOrNull($("inWaist").value);
     e.body.fat = numOrNull($("inFat").value);
+    e.body.bodyMemo = $("inBodyMemo").value.trim();
     save(); renderHome(); toast("ボディを保存しました 🌸");
   });
   $("saveSleep").addEventListener("click", function () {
@@ -974,6 +984,7 @@
     var e = dayEntry(current); e.mental = e.mental || {};
     e.mental.stress = +$("stressSlider").value;
     e.mental.gratitude = $("inGratitude").value.trim();
+    e.mental.mentalMemo = $("inMentalMemo").value.trim();
     save(); renderHome(); toast("メンタル記録を保存しました 🌻");
   });
 
@@ -1057,8 +1068,11 @@
     step();
   }
 
-  // ---- Web Audio BGM: natural-ish noise + soft tone ----
+  // ---- Web Audio BGM: natural soundscapes ----
+  var BGM_KEY = "beBloomBGM_v1";
   var audioCtx = null, bgmNodes = null;
+  var bgmType = localStorage.getItem(BGM_KEY) || "forest";
+
   function ensureCtx() {
     if (!audioCtx) {
       var AC = window.AudioContext || window.webkitAudioContext;
@@ -1068,63 +1082,182 @@
     if (audioCtx.state === "suspended") audioCtx.resume();
     return audioCtx;
   }
+
+  // noise buffer generator: "white" / "pink" / "brown"
+  function makeNoiseBuffer(ctx, seconds, kind) {
+    var len = Math.floor(ctx.sampleRate * seconds);
+    var buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+    var d = buffer.getChannelData(0), i;
+    if (kind === "brown") {
+      var last = 0;
+      for (i = 0; i < len; i++) {
+        var w = Math.random() * 2 - 1;
+        last = (last + 0.02 * w) / 1.02;
+        d[i] = last * 3.2;
+      }
+    } else if (kind === "pink") {
+      var b0 = 0, b1 = 0, b2 = 0;
+      for (i = 0; i < len; i++) {
+        var wp = Math.random() * 2 - 1;
+        b0 = 0.99765 * b0 + wp * 0.0990460;
+        b1 = 0.96300 * b1 + wp * 0.2965164;
+        b2 = 0.57000 * b2 + wp * 1.0526913;
+        d[i] = (b0 + b1 + b2 + wp * 0.1848) * 0.25;
+      }
+    } else {
+      for (i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    }
+    return buffer;
+  }
+
+  // short bird chirp (frequency-swept tone with soft envelope)
+  function birdChirp(ctx, dest, t0) {
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = "sine";
+    var base = 1900 + Math.random() * 1600;
+    o.frequency.setValueAtTime(base, t0);
+    o.frequency.linearRampToValueAtTime(base + 300 + Math.random() * 300, t0 + 0.04);
+    o.frequency.linearRampToValueAtTime(base - 150, t0 + 0.09);
+    o.frequency.linearRampToValueAtTime(base + 120, t0 + 0.14);
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(0.06, t0 + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0008, t0 + 0.18);
+    o.connect(g); g.connect(dest);
+    o.start(t0); o.stop(t0 + 0.22);
+  }
+
+  // schedule chirps at random gaps; keeps rescheduling while BGM alive
+  function scheduleChirps(ctx, dest, nodes, minGap, maxGap) {
+    function next() {
+      var gap = minGap + Math.random() * (maxGap - minGap);
+      var id = setTimeout(function () {
+        if (!bgmNodes || bgmNodes !== nodes) return;
+        birdChirp(ctx, dest, ctx.currentTime + 0.02);
+        if (Math.random() < 0.4) birdChirp(ctx, dest, ctx.currentTime + 0.28 + Math.random() * 0.2);
+        next();
+      }, gap * 1000);
+      nodes.timers.push(id);
+    }
+    next();
+  }
+
+  // build the node graph for a given soundscape; returns target master volume
+  function buildSoundscape(ctx, master, type, nodes) {
+    var t = ctx.currentTime;
+
+    function noiseSource(kind) {
+      var src = ctx.createBufferSource();
+      src.buffer = makeNoiseBuffer(ctx, 3, kind);
+      src.loop = true;
+      nodes.sources.push(src);
+      return src;
+    }
+    function osc(freq) {
+      var o = ctx.createOscillator();
+      o.frequency.value = freq;
+      nodes.oscs.push(o);
+      return o;
+    }
+
+    if (type === "breeze") {
+      // 🍃 そよ風: soft brown noise with slow swelling + gentle filter drift
+      var src = noiseSource("brown");
+      var lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 480; lp.Q.value = 0.4;
+      var g = ctx.createGain(); g.gain.value = 0.6;
+      var lfo = osc(0.09); var lfoG = ctx.createGain(); lfoG.gain.value = 0.35;
+      lfo.connect(lfoG); lfoG.connect(g.gain);
+      var flfo = osc(0.05); var flfoG = ctx.createGain(); flfoG.gain.value = 160;
+      flfo.connect(flfoG); flfoG.connect(lp.frequency);
+      src.connect(lp); lp.connect(g); g.connect(master);
+      src.start(t); lfo.start(t); flfo.start(t);
+      return 0.18;
+    }
+
+    if (type === "waves") {
+      // 🌊 波の音: low brown noise with deep slow swell (wave breathing) + brightness sweep
+      var wsrc = noiseSource("brown");
+      var wlp = ctx.createBiquadFilter(); wlp.type = "lowpass"; wlp.frequency.value = 520; wlp.Q.value = 0.5;
+      var wg = ctx.createGain(); wg.gain.value = 0.45;
+      var wlfo = osc(0.12); var wlfoG = ctx.createGain(); wlfoG.gain.value = 0.42;
+      wlfo.connect(wlfoG); wlfoG.connect(wg.gain);
+      var wflfo = osc(0.12); var wflfoG = ctx.createGain(); wflfoG.gain.value = 220;
+      wflfo.connect(wflfoG); wflfoG.connect(wlp.frequency);
+      wsrc.connect(wlp); wlp.connect(wg); wg.connect(master);
+      wsrc.start(t); wlfo.start(t); wflfo.start(t);
+      return 0.22;
+    }
+
+    if (type === "stream") {
+      // 💧 水のせせらぎ: brighter filtered white noise with fast bubbling flutter
+      var ssrc = noiseSource("white");
+      var hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 700;
+      var bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 2400; bp.Q.value = 0.7;
+      var sg = ctx.createGain(); sg.gain.value = 0.32;
+      // fast flutter (bubbling) + slow undulation
+      var flut = osc(6); var flutG = ctx.createGain(); flutG.gain.value = 0.09;
+      flut.connect(flutG); flutG.connect(sg.gain);
+      var slow = osc(0.6); var slowG = ctx.createGain(); slowG.gain.value = 0.05;
+      slow.connect(slowG); slowG.connect(sg.gain);
+      // sparkle band
+      var bp2 = ctx.createBiquadFilter(); bp2.type = "bandpass"; bp2.frequency.value = 4200; bp2.Q.value = 0.8;
+      var sg2 = ctx.createGain(); sg2.gain.value = 0.12;
+      ssrc.connect(hp); hp.connect(bp); bp.connect(sg); sg.connect(master);
+      hp.connect(bp2); bp2.connect(sg2); sg2.connect(master);
+      ssrc.start(t); flut.start(t); slow.start(t);
+      return 0.16;
+    }
+
+    if (type === "birds") {
+      // 🐦 鳥の声: quiet airy background + frequent varied chirps
+      var bsrc = noiseSource("pink");
+      var blp = ctx.createBiquadFilter(); blp.type = "lowpass"; blp.frequency.value = 1100; blp.Q.value = 0.3;
+      var bg = ctx.createGain(); bg.gain.value = 0.12;
+      bsrc.connect(blp); blp.connect(bg); bg.connect(master);
+      bsrc.start(t);
+      scheduleChirps(ctx, master, nodes, 1.2, 3.2);
+      return 0.2;
+    }
+
+    // 🌲 forest (default): leaf-rustle noise + occasional birds
+    var fsrc = noiseSource("pink");
+    var fbp = ctx.createBiquadFilter(); fbp.type = "bandpass"; fbp.frequency.value = 3000; fbp.Q.value = 0.5;
+    var fg = ctx.createGain(); fg.gain.value = 0.3;
+    var flfo2 = osc(0.15); var flfo2G = ctx.createGain(); flfo2G.gain.value = 0.18;
+    flfo2.connect(flfo2G); flfo2G.connect(fg.gain);
+    // a touch of low body so it feels like a wooded space
+    var flow = noiseSource("brown");
+    var flowLp = ctx.createBiquadFilter(); flowLp.type = "lowpass"; flowLp.frequency.value = 320;
+    var flowG = ctx.createGain(); flowG.gain.value = 0.18;
+    fsrc.connect(fbp); fbp.connect(fg); fg.connect(master);
+    flow.connect(flowLp); flowLp.connect(flowG); flowG.connect(master);
+    fsrc.start(t); flow.start(t); flfo2.start(t);
+    scheduleChirps(ctx, master, nodes, 3.5, 7.5);
+    return 0.2;
+  }
+
   function startBGM() {
     var ctx = ensureCtx(); if (!ctx) return;
     stopBGM();
-
-    // brown-ish noise buffer
-    var bufLen = ctx.sampleRate * 2;
-    var buffer = ctx.createBuffer(1, bufLen, ctx.sampleRate);
-    var d = buffer.getChannelData(0);
-    var last = 0;
-    for (var i = 0; i < bufLen; i++) {
-      var white = Math.random() * 2 - 1;
-      last = (last + 0.02 * white) / 1.02;
-      d[i] = last * 3.2;
-    }
-    var noise = ctx.createBufferSource();
-    noise.buffer = buffer; noise.loop = true;
-
-    // gentle low-pass to make it "wind/wave"-like
-    var lp = ctx.createBiquadFilter();
-    lp.type = "lowpass"; lp.frequency.value = 620; lp.Q.value = 0.5;
-
-    // slow amplitude LFO -> wave breathing feel
-    var noiseGain = ctx.createGain();
-    noiseGain.gain.value = 0.12;
-    var lfo = ctx.createOscillator();
-    lfo.frequency.value = 0.1;
-    var lfoGain = ctx.createGain();
-    lfoGain.gain.value = 0.05;
-    lfo.connect(lfoGain); lfoGain.connect(noiseGain.gain);
-
-    // soft ambient tone (perfect fifth pad)
-    var oscA = ctx.createOscillator(); oscA.type = "sine"; oscA.frequency.value = 220;
-    var oscB = ctx.createOscillator(); oscB.type = "sine"; oscB.frequency.value = 330;
-    var toneGain = ctx.createGain(); toneGain.gain.value = 0.0;
-
     var master = ctx.createGain();
     master.gain.setValueAtTime(0, ctx.currentTime);
-    master.gain.linearRampToValueAtTime(0.9, ctx.currentTime + 2);
-
-    noise.connect(lp); lp.connect(noiseGain); noiseGain.connect(master);
-    oscA.connect(toneGain); oscB.connect(toneGain); toneGain.connect(master);
-    toneGain.gain.linearRampToValueAtTime(0.025, ctx.currentTime + 3);
     master.connect(ctx.destination);
-
-    noise.start(); lfo.start(); oscA.start(); oscB.start();
-    bgmNodes = { noise: noise, lfo: lfo, oscA: oscA, oscB: oscB, master: master, ctx: ctx };
+    var nodes = { ctx: ctx, master: master, sources: [], oscs: [], timers: [] };
+    var vol = buildSoundscape(ctx, master, bgmType, nodes);
+    master.gain.linearRampToValueAtTime(vol, ctx.currentTime + 2);
+    bgmNodes = nodes;
   }
   function stopBGM() {
     if (!bgmNodes) return;
     var n = bgmNodes; bgmNodes = null;
+    n.timers.forEach(function (id) { clearTimeout(id); });
     try {
       var t = n.ctx.currentTime;
       n.master.gain.cancelScheduledValues(t);
       n.master.gain.setValueAtTime(n.master.gain.value, t);
       n.master.gain.linearRampToValueAtTime(0, t + 0.6);
       setTimeout(function () {
-        try { n.noise.stop(); n.lfo.stop(); n.oscA.stop(); n.oscB.stop(); } catch (e) {}
+        n.sources.forEach(function (s) { try { s.stop(); } catch (e) {} });
+        n.oscs.forEach(function (o) { try { o.stop(); } catch (e) {} });
       }, 700);
     } catch (e) {}
   }
@@ -1144,6 +1277,18 @@
   $("bgmToggle").addEventListener("change", function () {
     if (!medRunning) return;
     if (this.checked) startBGM(); else stopBGM();
+  });
+  function setActiveBgmChip() {
+    $("bgmSounds").querySelectorAll(".chip").forEach(function (c) {
+      c.classList.toggle("active", c.getAttribute("data-sound") === bgmType);
+    });
+  }
+  $("bgmSounds").addEventListener("click", function (ev) {
+    var c = ev.target.closest(".chip"); if (!c) return;
+    bgmType = c.getAttribute("data-sound");
+    localStorage.setItem(BGM_KEY, bgmType);
+    setActiveBgmChip();
+    if (medRunning && $("bgmToggle").checked) startBGM();
   });
 
   // ================= CHARTS =================
@@ -1370,6 +1515,7 @@
     if (b.weight != null) rows.push(dr("⚖️ 体重", b.weight + " kg"));
     if (b.waist != null) rows.push(dr("📏 ウエスト", b.waist + " cm"));
     if (b.fat != null) rows.push(dr("💧 体脂肪率", b.fat + " %"));
+    if (b.bodyMemo) rows.push(dr("📝 ボディメモ", esc(b.bodyMemo)));
     var sh = sleepHours(e.sleep);
     if (sh != null) rows.push(dr("😴 睡眠", sh.toFixed(1) + " 時間" + (e.sleep.quality ? "（質 " + e.sleep.quality + "/5）" : "")));
     var tt = (e.training || []);
@@ -1386,6 +1532,7 @@
       if (mv && mv.text) rows.push(dr(mt.ico + " " + mt.label, esc(mv.text) + (mv.cat ? "・" + mv.cat : "")));
     });
     if (m.gratitude) rows.push(dr("🌻 感謝日記", esc(m.gratitude)));
+    if (m.mentalMemo) rows.push(dr("📝 メンタルメモ", esc(m.mentalMemo)));
     var p = e.period || {};
     if (p.start) rows.push(dr("🌷 生理", "開始"));
     if (p.end) rows.push(dr("🌷 生理", "終了"));
@@ -1407,10 +1554,7 @@
   initTheme();
   buildMealFields();
   setMedDisplay();
+  setActiveBgmChip();
   renderAll();
 })();
 </script>
-</head>
-<body>
-</body>
-</html>
