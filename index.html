@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+<title>Be Bloom</title>
+<style>
+  :root {
+    --coral: #F47B8A;
+    --coral-dark: #E85D70;
+    --coral-soft: #FDE9EC;
+    --emerald: #2ECC8B;
+    --emerald-dark: #22A870;
+    --emerald-soft: #E2F7ED;
+    --bg: #FBF7F4;
+    --card: #FFFFFF;
+    --text: #2B2B33;
+    --text-sub: #8A8A95;
+    --border: #F0E8E4;
+    --shadow: 0 4px 20px rgba(244, 123, 138, 0.10);
+    --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.04);
+    --radius: 20px;
+    --radius-sm: 14px;
+    --nav-h: 64px;
+  }
+  :root[data-theme="dark"] {
+    --coral: #F47B8A;
+    --coral-dark: #FF97A5;
+    --coral-soft: #3A2A2E;
+    --emerald: #3BDD9B;
+    --emerald-dark: #2ECC8B;
+    --emerald-soft: #22322B;
+    --bg: #16161C;
+    --card: #22232B;
+    --text: #ECECF1;
+    --text-sub: #9A9AA8;
+    --border: #33343E;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.30);
+    --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.25);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  #app {
+    max-width: 430px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--bg);
+    position: relative;
+    padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 12px);
+  }
+
+  /* Header */
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--bg);
+    padding: 18px 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 8px; }
+  .brand-logo {
+    width: 34px; height: 34px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--coral), var(--emerald));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px;
+    box-shadow: var(--shadow);
+  }
+  .brand-name { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+  .brand-name .b1 { color: var(--coral); }
+  .brand-name .b2 { color: var(--emerald); }
+  .header-actions { display: flex; align-items: center; gap: 8px; }
+  .icon-btn {
+    width: 38px; height: 38px; border-radius: 12px;
+    border: none; background: var(--card); color: var(--text);
+    font-size: 17px; cursor: pointer; box-shadow: var(--shadow-soft);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.12s;
+  }
+  .icon-btn:active { transform: scale(0.92); }
+
+  /* Views */
+  .view { display: none; padding: 16px 16px 8px; animation: fade 0.28s ease; }
+  .view.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* Date bar */
+  .date-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--card); border-radius: var(--radius-sm);
+    padding: 8px 10px; box-shadow: var(--shadow-soft); margin-bottom: 16px;
+  }
+  .date-bar button {
+    border: none; background: transparent; color: var(--coral);
+    font-size: 20px; width: 40px; height: 36px; border-radius: 10px; cursor: pointer;
+  }
+  .date-bar button:active { background: var(--coral-soft); }
+  .date-label { font-weight: 700; font-size: 15px; }
+  .date-label small { display: block; font-weight: 500; font-size: 11px; color: var(--text-sub); text-align: center; }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow-soft);
+    margin-bottom: 16px;
+  }
+  .card-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 15px; font-weight: 700; margin: 0 0 14px;
+  }
+  .card-title .ci { font-size: 18px; }
+  .card-title .badge { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--text-sub); }
+
+  /* Hero / goals */
+  .hero {
+    background: linear-gradient(135deg, var(--coral), var(--coral-dark));
+    color: #fff; border-radius: var(--radius); padding: 20px;
+    box-shadow: var(--shadow); margin-bottom: 16px; position: relative; overflow: hidden;
+  }
+  .hero::after {
+    content: "🌸"; position: absolute; right: -10px; top: -14px;
+    font-size: 90px; opacity: 0.18; transform: rotate(12deg);
+  }
+  .hero h2 { margin: 0 0 4px; font-size: 19px; font-weight: 800; }
+  .hero p { margin: 0; font-size: 13px; opacity: 0.92; }
+  .goals { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+  .goal {
+    background: rgba(255,255,255,0.18); border-radius: 12px;
+    padding: 10px 12px; font-size: 12.5px; font-weight: 600;
+    display: flex; align-items: center; gap: 7px; backdrop-filter: blur(4px);
+  }
+  .goal .g-ico { font-size: 16px; }
+
+  /* Stat grid */
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat {
+    background: var(--card); border-radius: var(--radius-sm);
+    padding: 14px 10px; text-align: center; box-shadow: var(--shadow-soft);
+  }
+  .stat .s-ico { font-size: 20px; }
+  .stat .s-val { font-size: 19px; font-weight: 800; margin-top: 4px; color: var(--coral); }
+  .stat .s-val.green { color: var(--emerald); }
+  .stat .s-unit { font-size: 11px; font-weight: 600; color: var(--text-sub); }
+  .stat .s-lbl { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+
+  /* Form controls */
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  input[type="number"], input[type="text"], input[type="time"], input[type="date"], select, textarea {
+    width: 100%; border: 1.5px solid var(--border); background: var(--bg);
+    color: var(--text); border-radius: 12px; padding: 11px 12px;
+    font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--coral); }
+  textarea { resize: vertical; min-height: 72px; line-height: 1.5; }
+  select { -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8A95' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 34px; }
+
+  .btn {
+    width: 100%; border: none; border-radius: 14px; padding: 13px;
+    font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer;
+    color: #fff; background: var(--coral); box-shadow: var(--shadow);
+    transition: transform 0.12s, opacity 0.15s; margin-top: 4px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn.green { background: var(--emerald); }
+  .btn.ghost { background: transparent; color: var(--coral); box-shadow: none; border: 1.5px solid var(--coral); }
+  .btn.sm { padding: 9px; font-size: 13px; margin-top: 0; }
+
+  /* chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    border: 1.5px solid var(--border); background: var(--bg); color: var(--text);
+    border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 5px;
+  }
+  .chip.active { background: var(--coral); color: #fff; border-color: var(--coral); }
+  .chip.green.active { background: var(--emerald); border-color: var(--emerald); }
+
+  /* mood */
+  .moods { display: flex; justify-content: space-between; gap: 6px; }
+  .mood {
+    flex: 1; border: 1.5px solid var(--border); background: var(--bg);
+    border-radius: 14px; padding: 12px 4px; font-size: 26px; cursor: pointer;
+    transition: all 0.15s; text-align: center;
+  }
+  .mood.active { background: var(--coral-soft); border-color: var(--coral); transform: translateY(-3px); }
+  .mood small { display: block; font-size: 9.5px; color: var(--text-sub); margin-top: 2px; }
+
+  /* slider */
+  .slider-wrap { display: flex; align-items: center; gap: 12px; }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none; flex: 1; height: 8px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--emerald), #F4C542 55%, var(--coral));
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%;
+    background: #fff; border: 3px solid var(--coral); cursor: pointer; box-shadow: var(--shadow-soft);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 22px; height: 22px; border-radius: 50%; background: #fff;
+    border: 3px solid var(--coral); cursor: pointer;
+  }
+  .stress-val { font-size: 22px; font-weight: 800; width: 42px; text-align: center; color: var(--coral); }
+
+  .alert {
+    margin-top: 12px; background: var(--emerald-soft); border: 1.5px solid var(--emerald);
+    border-radius: 14px; padding: 12px 14px; font-size: 13px; display: none; align-items: center; gap: 10px;
+  }
+  .alert.show { display: flex; animation: fade 0.3s; }
+  .alert .a-ico { font-size: 20px; }
+  .alert button {
+    margin-left: auto; border: none; background: var(--emerald); color: #fff;
+    font-weight: 700; font-size: 12px; padding: 7px 12px; border-radius: 10px; cursor: pointer; white-space: nowrap;
+  }
+
+  /* training list */
+  .train-item {
+    display: flex; align-items: center; gap: 8px; background: var(--bg);
+    border-radius: 12px; padding: 8px 12px; margin-bottom: 8px; font-size: 13.5px;
+  }
+  .train-item .t-del { margin-left: auto; border: none; background: transparent; color: var(--text-sub); font-size: 16px; cursor: pointer; }
+  .train-item .t-min { font-weight: 700; color: var(--emerald); }
+
+  .empty { text-align: center; color: var(--text-sub); font-size: 13px; padding: 8px 0; }
+
+  /* period */
+  .period-status {
+    text-align: center; padding: 6px 0 14px; font-size: 14px; font-weight: 600;
+  }
+  .period-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--coral); margin-right: 6px; vertical-align: middle; }
+
+  /* meditation */
+  .med-wrap { text-align: center; padding: 8px 0; }
+  .med-ring { position: relative; width: 240px; height: 240px; margin: 12px auto 20px; }
+  .med-ring svg { transform: rotate(-90deg); }
+  .med-ring .ring-bg { fill: none; stroke: var(--border); stroke-width: 14; }
+  .med-ring .ring-fg { fill: none; stroke: var(--emerald); stroke-width: 14; stroke-linecap: round; transition: stroke-dashoffset 0.4s linear; }
+  .med-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .med-time { font-size: 46px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .med-sub { font-size: 13px; color: var(--text-sub); }
+  .med-breathe { font-size: 15px; font-weight: 600; color: var(--emerald); margin-top: 4px; height: 20px; }
+  .dur-pick { display: flex; justify-content: center; gap: 8px; margin-bottom: 18px; }
+  .dur {
+    border: 1.5px solid var(--border); background: var(--card); color: var(--text);
+    border-radius: 14px; padding: 12px 0; width: 66px; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.15s;
+  }
+  .dur.active { background: var(--emerald); color: #fff; border-color: var(--emerald); }
+  .dur small { display: block; font-size: 10px; font-weight: 500; opacity: 0.8; }
+  .med-controls { display: flex; gap: 10px; justify-content: center; }
+  .med-controls .btn { width: auto; padding: 13px 30px; margin-top: 0; }
+  .bgm-toggle {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 18px; font-size: 13px; color: var(--text-sub);
+  }
+  .switch { position: relative; width: 46px; height: 26px; }
+  .switch input { display: none; }
+  .switch .track { position: absolute; inset: 0; background: var(--border); border-radius: 999px; transition: 0.2s; cursor: pointer; }
+  .switch .track::after { content: ""; position: absolute; width: 20px; height: 20px; border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: 0.2s; box-shadow: var(--shadow-soft); }
+  .switch input:checked + .track { background: var(--emerald); }
+  .switch input:checked + .track::after { transform: translateX(20px); }
+
+  /* charts */
+  .seg {
+    display: flex; background: var(--card); border-radius: 12px; padding: 4px;
+    box-shadow: var(--shadow-soft); margin-bottom: 16px;
+  }
+  .seg button {
+    flex: 1; border: none; background: transparent; color: var(--text-sub);
+    padding: 9px; border-radius: 9px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.15s;
+  }
+  .seg button.active { background: var(--coral); color: #fff; }
+  .chart-card { margin-bottom: 14px; }
+  .chart-card canvas { width: 100%; display: block; }
+  .chart-legend { display: flex; gap: 14px; font-size: 11.5px; color: var(--text-sub); margin-top: 8px; flex-wrap: wrap; }
+  .chart-legend span { display: flex; align-items: center; gap: 5px; }
+  .lg-dot { width: 9px; height: 9px; border-radius: 3px; }
+
+  /* day detail */
+  .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .detail-row:last-child { border: none; }
+  .detail-row .d-lbl { color: var(--text-sub); }
+  .detail-row .d-val { font-weight: 600; }
+
+  /* toast */
+  #toast {
+    position: fixed; bottom: calc(var(--nav-h) + 24px); left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--text); color: var(--bg); padding: 11px 20px; border-radius: 999px;
+    font-size: 13.5px; font-weight: 600; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 100;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.25); max-width: 90%;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* bottom nav */
+  .nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px; height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--card); border-top: 1px solid var(--border);
+    display: flex; z-index: 60; box-shadow: 0 -2px 16px rgba(0,0,0,0.05);
+  }
+  .nav button {
+    flex: 1; border: none; background: transparent; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    color: var(--text-sub); font-size: 10px; font-weight: 600; padding-top: 8px;
+  }
+  .nav button .n-ico { font-size: 21px; transition: transform 0.15s; }
+  .nav button.active { color: var(--coral); }
+  .nav button.active .n-ico { transform: translateY(-2px) scale(1.08); }
+
+  .section-head { font-size: 13px; font-weight: 700; color: var(--text-sub); margin: 4px 2px 10px; text-transform: none; }
+</style>
+
+<div id="app">
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-logo">🌸</div>
+      <div class="brand-name"><span class="b1">Be</span> <span class="b2">Bloom</span></div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="todayBtn" title="今日へ">📅</button>
+      <button class="icon-btn" id="themeBtn" title="テーマ切替">🌙</button>
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <section class="view active" id="view-home">
+    <div class="hero">
+      <h2>心身ともに花開く</h2>
+      <p>今日もあなたのペースで、健やかに。</p>
+      <div class="goals">
+        <div class="goal"><span class="g-ico">💪</span>貯筋ができる</div>
+        <div class="goal"><span class="g-ico">🏃</span>動けるからだに</div>
+        <div class="goal"><span class="g-ico">🧠</span>メンタルも安定</div>
+        <div class="goal"><span class="g-ico">✨</span>いつでも健康で</div>
+      </div>
+    </div>
+
+    <div class="date-bar">
+      <button data-nav="-1">‹</button>
+      <div class="date-label" id="homeDateLbl">-</div>
+      <button data-nav="1">›</button>
+    </div>
+
+    <div class="section-head">今日のサマリー</div>
+    <div class="stat-grid" style="margin-bottom:16px;">
+      <div class="stat"><div class="s-ico">⚖️</div><div class="s-val" id="sumWeight">–</div><div class="s-unit">kg</div><div class="s-lbl">体重</div></div>
+      <div class="stat"><div class="s-ico">😴</div><div class="s-val green" id="sumSleep">–</div><div class="s-unit">時間</div><div class="s-lbl">睡眠</div></div>
+      <div class="stat"><div class="s-ico">🙂</div><div class="s-val" id="sumMood">–</div><div class="s-unit"> </div><div class="s-lbl">気分</div></div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="s-ico">🔥</div><div class="s-val green" id="sumTrain">–</div><div class="s-unit">分</div><div class="s-lbl">運動</div></div>
+      <div class="stat"><div class="s-ico">😰</div><div class="s-val" id="sumStress">–</div><div class="s-unit">/10</div><div class="s-lbl">ストレス</div></div>
+      <div class="stat"><div class="s-ico">📏</div><div class="s-val green" id="sumWaist">–</div><div class="s-unit">cm</div><div class="s-lbl">ウエスト</div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title"><span class="ci">🌷</span>生理周期</div>
+      <div class="period-status" id="periodHome">記録なし</div>
+      <button class="btn ghost sm" data-goto="body">ボディで記録する</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="ci">🍱</span>今日の食事</div>
+      <div id="mealHome"><div class="empty">まだ記録がありません</div></div>
+      <button class="btn ghost sm" data-goto="body" style="margin-top:10px;">食事を記録する</button>
+    </div>
+  </section>
+
+  <!-- BODY -->
+  <section class="view" id="view-body">
+    <div class="date-bar">
+      <button data-nav="-1">‹</button>
+      <div class="date-label" id="bodyDateLbl">-</div>
+      <button data-nav="1">›</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="ci">⚖️</span>ボディトラッキング</div>
+      <div class="row3">
+        <div class="field"><label>体重</label><input type="number" step="0.1" inputmode="decimal" id="inWeight" placeholder="kg"></div>
+        <div class="field"><label>ウエスト</label><input type="number" step="0.1" inputmode="decimal" id="inWaist" placeholder="cm"></div>
+        <div class="field"><label>体脂肪率</label><input type="number" step="0.1" inputmode="decimal" id="inFat" placeholder="%"></div>
+      </div>
+      <button class="btn" id="saveBody">保存する</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="ci">🌷</span>生理トラッキング</div>
+      <div class="chips" style="margin-bottom:12px;">
+        <button class="chip" id="pStart">🩸 生理開始</button>
+        <button class="chip" id="pEnd">🌿 生理終了</button>
+      </div>
+      <div class="period-status" id="periodBody" style="padding-bottom:0;">記録なし</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="ci">😴</span>睡眠トラッキング</div>
+      <div class="row2">
+        <div class="field"><label>就寝時間</label><input type="time" id="inBed"></div>
+        <div class="field"><label>起床時間</label><input type="time" id="inWake"></div>
+      </div>
+      <div class="field">
+        <label>睡眠の質</label>
+        <div class="chips" id="sleepQ">
+          <button class="chip green" data-q="1">1</button>
+          <button class="chip green" data-q="2">2</button>
+          <button class="chip green" data-q="3">3</button>
+          <button class="chip green" data-q="4">4</button>
+          <button class="chip green" data-q="5">5</button>
+        </div>
+      </div>
+      <button class="btn green" id="saveSleep">保存する</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="ci">🔥</span>トレーニング記録</div>
+      <div class="field">
+        <label>種類</label>
+        <div class="chips" id="trainType">
+          <button class="chip green" data-t="筋トレ">💪 筋トレ</button>
+          <button class="chip green" data-t="ジョギング">🏃 ジョギング</button>
+          <button class="chip green" data-t="ウォーキング">🚶 ウォーキング</button>
+          <button class="chip green" data-t="ストレッチ">🤸 ストレッチ</button>
+          <button class="chip green" data-t="ヨガ">🧘 ヨガ</button>
+          <button class="chip green" data-t="水泳">🏊 水泳</button>
+          <button class="chip green" data-t="その他">✨ その他</button>
+        </div>
+      </div>
+      <div class="field"><label>時間（分）</label><input type="number" inputmode="numeric" id="inTrainMin" placeholder="30"></div>
+      <button class="btn green" id="addTrain">追加する</button>
+      <div id="trainList" style="margin-top:14px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="ci">🍱</span>食事記録</div>
+      <div id="mealFields"></div>
+      <button class="btn" id="saveMeal">保存する</button>
+    </div>
+  </section>
+
+  <!-- MENTAL -->
+  <section class="view" id="view-mental">
+    <div class="date-bar">
+      <button data-nav="-1">‹</button>
+      <div class="date-label" id="mentalDateLbl">-</div>
+      <button data-nav="1">›</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="ci">🙂</span>気分トラッカー</div>
+      <div class="moods" id="moods">
+        <button class="mood" data-m="1">😢<small>最悪</small></button>
+        <button class="mood" data-m="2">😟<small>いまいち</small></button>
+        <button class="mood" data-m="3">😐<small>ふつう</small></button>
+        <button class="mood" data-m="4">😊<small>いい感じ</small></button>
+        <button class="mood" data-m="5">😄<small>最高</small></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="ci">😰</span>ストレスレベル</div>
+      <div class="slider-wrap">
+        <input type="range" min="1" max="10" value="3" id="stressSlider">
+        <div class="stress-val" id="stressVal">3</div>
+      </div>
+      <div class="alert" id="stressAlert">
+        <span class="a-ico">🧘</span>
+        <span>ストレス高め。少し深呼吸してみませんか？</span>
+        <button data-goto="meditation">瞑想する</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="ci">🌻</span>感謝日記<span class="badge">ポジティブ日記</span></div>
+      <div class="field" style="margin-bottom:10px;">
+        <textarea id="inGratitude" placeholder="今日ありがとうと感じたこと、うれしかったことを書きましょう。"></textarea>
+      </div>
+      <button class="btn" id="saveMental">気分・ストレス・日記を保存</button>
+    </div>
+  </section>
+
+  <!-- MEDITATION -->
+  <section class="view" id="view-meditation">
+    <div class="med-wrap">
+      <div class="card-title" style="justify-content:center;"><span class="ci">🧘</span>瞑想タイマー</div>
+      <div class="dur-pick" id="durPick">
+        <button class="dur active" data-d="1">1<small>分</small></button>
+        <button class="dur" data-d="3">3<small>分</small></button>
+        <button class="dur" data-d="5">5<small>分</small></button>
+        <button class="dur" data-d="10">10<small>分</small></button>
+      </div>
+
+      <div class="med-ring">
+        <svg width="240" height="240" viewBox="0 0 240 240">
+          <circle class="ring-bg" cx="120" cy="120" r="106"></circle>
+          <circle class="ring-fg" cx="120" cy="120" r="106" id="ringFg"></circle>
+        </svg>
+        <div class="med-center">
+          <div class="med-time" id="medTime">01:00</div>
+          <div class="med-sub">深呼吸をどうぞ</div>
+          <div class="med-breathe" id="medBreathe"></div>
+        </div>
+      </div>
+
+      <div class="med-controls">
+        <button class="btn green" id="medStart">はじめる</button>
+        <button class="btn ghost" id="medReset">リセット</button>
+      </div>
+
+      <div class="bgm-toggle">
+        <label class="switch"><input type="checkbox" id="bgmToggle" checked><span class="track"></span></label>
+        <span>🎵 自然音BGM</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHARTS -->
+  <section class="view" id="view-charts">
+    <div class="seg" id="rangeSeg">
+      <button class="active" data-r="7">週間</button>
+      <button data-r="30">月間</button>
+    </div>
+
+    <div class="card chart-card">
+      <div class="card-title"><span class="ci">⚖️</span>体重・ウエスト・体脂肪</div>
+      <canvas id="chBody" height="360"></canvas>
+      <div class="chart-legend">
+        <span><span class="lg-dot" style="background:#F47B8A"></span>体重(kg)</span>
+        <span><span class="lg-dot" style="background:#2ECC8B"></span>ウエスト(cm)</span>
+        <span><span class="lg-dot" style="background:#F4C542"></span>体脂肪(%)</span>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <div class="card-title"><span class="ci">😴</span>睡眠時間</div>
+      <canvas id="chSleep" height="300"></canvas>
+    </div>
+
+    <div class="card chart-card">
+      <div class="card-title"><span class="ci">🔥</span>運動時間</div>
+      <canvas id="chTrain" height="300"></canvas>
+    </div>
+
+    <div class="card chart-card">
+      <div class="card-title"><span class="ci">🧠</span>気分・ストレス</div>
+      <canvas id="chMental" height="300"></canvas>
+      <div class="chart-legend">
+        <span><span class="lg-dot" style="background:#F47B8A"></span>気分(1-5)</span>
+        <span><span class="lg-dot" style="background:#2ECC8B"></span>ストレス(1-10)</span>
+      </div>
+    </div>
+
+    <div class="card" id="dayDetailCard" style="display:none;">
+      <div class="card-title"><span class="ci">📋</span><span id="detailTitle">日別詳細</span></div>
+      <div id="detailBody"></div>
+    </div>
+    <div class="empty" id="chartHint" style="padding:4px 0 12px;">グラフの点をタップすると、その日の詳細が見られます</div>
+  </section>
+
+  <nav class="nav" id="nav">
+    <button class="active" data-view="home"><span class="n-ico">🏠</span>ホーム</button>
+    <button data-view="body"><span class="n-ico">💪</span>ボディ</button>
+    <button data-view="mental"><span class="n-ico">🧠</span>メンタル</button>
+    <button data-view="meditation"><span class="n-ico">🧘</span>瞑想</button>
+    <button data-view="charts"><span class="n-ico">📊</span>グラフ</button>
+  </nav>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORE_KEY = "beBloomData_v1";
+  var THEME_KEY = "beBloomTheme_v1";
+  var MEAL_TYPES = [
+    { key: "breakfast", label: "朝食", ico: "🌅" },
+    { key: "lunch", label: "昼食", ico: "☀️" },
+    { key: "dinner", label: "夕食", ico: "🌙" },
+    { key: "snack", label: "間食", ico: "🍪" }
+  ];
+  var MEAL_CATS = ["自炊", "外食", "コンビニ", "デリバリー", "その他"];
+  var MOOD_EMOJI = { 1: "😢", 2: "😟", 3: "😐", 4: "😊", 5: "😄" };
+
+  // ---------- state ----------
+  var data = load();
+  var current = todayKey();
+  var selectedTrainType = null;
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (e) {}
+  }
+  function todayKey() {
+    var d = new Date();
+    return fmtKey(d);
+  }
+  function fmtKey(d) {
+    var y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
+    return y + "-" + pad(m) + "-" + pad(day);
+  }
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function keyToDate(k) {
+    var p = k.split("-");
+    return new Date(+p[0], +p[1] - 1, +p[2]);
+  }
+  function dayEntry(k) {
+    if (!data[k]) data[k] = {};
+    return data[k];
+  }
+  function $(id) { return document.getElementById(id); }
+
+  // ---------- toast ----------
+  var toastTimer;
+  function toast(msg) {
+    var t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2000);
+  }
+
+  // ---------- theme ----------
+  function initTheme() {
+    var saved = localStorage.getItem(THEME_KEY);
+    var dark = saved ? saved === "dark" : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    applyTheme(dark);
+  }
+  function applyTheme(dark) {
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    $("themeBtn").textContent = dark ? "☀️" : "🌙";
+  }
+  $("themeBtn").addEventListener("click", function () {
+    var dark = document.documentElement.getAttribute("data-theme") !== "dark";
+    applyTheme(dark);
+    localStorage.setItem(THEME_KEY, dark ? "dark" : "light");
+    if (activeView === "charts") renderCharts();
+  });
+
+  // ---------- navigation ----------
+  var activeView = "home";
+  function switchView(v) {
+    activeView = v;
+    var views = document.querySelectorAll(".view");
+    for (var i = 0; i < views.length; i++) views[i].classList.remove("active");
+    $("view-" + v).classList.add("active");
+    var btns = $("nav").querySelectorAll("button");
+    for (var j = 0; j < btns.length; j++) {
+      btns[j].classList.toggle("active", btns[j].getAttribute("data-view") === v);
+    }
+    window.scrollTo(0, 0);
+    if (v === "charts") renderCharts();
+    if (v === "meditation") { /* keep timer */ }
+  }
+  $("nav").addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (b) switchView(b.getAttribute("data-view"));
+  });
+  document.addEventListener("click", function (e) {
+    var g = e.target.closest("[data-goto]");
+    if (g) switchView(g.getAttribute("data-goto"));
+  });
+
+  // date nav
+  function changeDate(delta) {
+    var d = keyToDate(current);
+    d.setDate(d.getDate() + delta);
+    if (fmtKey(d) > todayKey()) return; // no future
+    current = fmtKey(d);
+    renderAll();
+  }
+  document.querySelectorAll("[data-nav]").forEach(function (b) {
+    b.addEventListener("click", function () { changeDate(+b.getAttribute("data-nav")); });
+  });
+  $("todayBtn").addEventListener("click", function () {
+    current = todayKey();
+    renderAll();
+    switchView("home");
+    toast("今日に戻りました");
+  });
+
+  function dateLabelText(k) {
+    var d = keyToDate(k);
+    var wd = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
+    var main = (d.getMonth() + 1) + "月" + d.getDate() + "日 (" + wd + ")";
+    var rel = "";
+    if (k === todayKey()) rel = "今日";
+    else {
+      var y = new Date(); y.setDate(y.getDate() - 1);
+      if (k === fmtKey(y)) rel = "昨日";
+    }
+    return { main: main, rel: rel };
+  }
+  function setDateLabels() {
+    var t = dateLabelText(current);
+    ["homeDateLbl", "bodyDateLbl", "mentalDateLbl"].forEach(function (id) {
+      var el = $(id);
+      el.innerHTML = t.main + (t.rel ? "<small>" + t.rel + "</small>" : "");
+    });
+  }
+
+  // ---------- build meal fields ----------
+  function buildMealFields() {
+    var wrap = $("mealFields");
+    wrap.innerHTML = "";
+    MEAL_TYPES.forEach(function (m) {
+      var f = document.createElement("div");
+      f.className = "field";
+      var opts = MEAL_CATS.map(function (c) { return '<option value="' + c + '">' + c + '</option>'; }).join("");
+      f.innerHTML =
+        '<label>' + m.ico + ' ' + m.label + '</label>' +
+        '<div class="row2">' +
+          '<input type="text" id="meal_' + m.key + '" placeholder="内容">' +
+          '<select id="mealcat_' + m.key + '"><option value="">カテゴリ</option>' + opts + '</select>' +
+        '</div>';
+      wrap.appendChild(f);
+    });
+  }
+
+  // ---------- render: body ----------
+  function renderBody() {
+    var e = data[current] || {};
+    var b = e.body || {};
+    $("inWeight").value = b.weight != null ? b.weight : "";
+    $("inWaist").value = b.waist != null ? b.waist : "";
+    $("inFat").value = b.fat != null ? b.fat : "";
+
+    var s = e.sleep || {};
+    $("inBed").value = s.bed || "";
+    $("inWake").value = s.wake || "";
+    $("sleepQ").querySelectorAll(".chip").forEach(function (c) {
+      c.classList.toggle("active", +c.getAttribute("data-q") === s.quality);
+    });
+
+    renderTrainList();
+
+    var meals = e.meals || {};
+    MEAL_TYPES.forEach(function (m) {
+      var mv = meals[m.key] || {};
+      $("meal_" + m.key).value = mv.text || "";
+      $("mealcat_" + m.key).value = mv.cat || "";
+    });
+
+    renderPeriodStatus();
+    // reset training input selection
+    selectedTrainType = null;
+    $("trainType").querySelectorAll(".chip").forEach(function (c) { c.classList.remove("active"); });
+    $("inTrainMin").value = "";
+  }
+
+  function renderTrainList() {
+    var e = data[current] || {};
+    var list = e.training || [];
+    var wrap = $("trainList");
+    if (!list.length) { wrap.innerHTML = '<div class="empty">まだ記録がありません</div>'; return; }
+    wrap.innerHTML = "";
+    list.forEach(function (t, i) {
+      var row = document.createElement("div");
+      row.className = "train-item";
+      row.innerHTML = '<span>' + typeIco(t.type) + ' ' + t.type + '</span><span class="t-min">' + t.min + '分</span><button class="t-del" data-i="' + i + '">✕</button>';
+      wrap.appendChild(row);
+    });
+    wrap.querySelectorAll(".t-del").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var i = +btn.getAttribute("data-i");
+        data[current].training.splice(i, 1);
+        save(); renderTrainList(); renderHome();
+        toast("削除しました");
+      });
+    });
+  }
+  function typeIco(t) {
+    var m = { "筋トレ": "💪", "ジョギング": "🏃", "ウォーキング": "🚶", "ストレッチ": "🤸", "ヨガ": "🧘", "水泳": "🏊", "その他": "✨" };
+    return m[t] || "✨";
+  }
+
+  function renderPeriodStatus() {
+    var e = data[current] || {};
+    var p = e.period || {};
+    var txt = "記録なし";
+    if (p.start && p.end) txt = '<span class="period-dot"></span>開始・終了を記録';
+    else if (p.start) txt = '<span class="period-dot"></span>生理開始を記録';
+    else if (p.end) txt = '<span class="period-dot" style="background:var(--emerald)"></span>生理終了を記録';
+    $("periodBody").innerHTML = txt;
+    $("pStart").classList.toggle("active", !!p.start);
+    $("pEnd").classList.toggle("active", !!p.end);
+
+    // home: last period start
+    var lastStart = null;
+    Object.keys(data).sort().forEach(function (k) {
+      if (data[k].period && data[k].period.start && k <= current) lastStart = k;
+    });
+    if (lastStart) {
+      var diff = Math.round((keyToDate(current) - keyToDate(lastStart)) / 86400000);
+      $("periodHome").innerHTML = '<span class="period-dot"></span>前回開始: ' + dateLabelText(lastStart).main + '（' + (diff === 0 ? '当日' : diff + '日目') + '）';
+    } else {
+      $("periodHome").textContent = "記録なし";
+    }
+  }
+
+  // ---------- render: mental ----------
+  function renderMental() {
+    var e = data[current] || {};
+    var m = e.mental || {};
+    $("moods").querySelectorAll(".mood").forEach(function (b) {
+      b.classList.toggle("active", +b.getAttribute("data-m") === m.mood);
+    });
+    var stress = m.stress != null ? m.stress : 3;
+    $("stressSlider").value = stress;
+    $("stressVal").textContent = stress;
+    updateStressAlert(stress);
+    $("inGratitude").value = m.gratitude || "";
+  }
+  function updateStressAlert(v) {
+    $("stressAlert").classList.toggle("show", v >= 7);
+  }
+
+  // ---------- render: home ----------
+  function renderHome() {
+    var e = data[current] || {};
+    var b = e.body || {};
+    $("sumWeight").textContent = b.weight != null ? b.weight : "–";
+    $("sumWaist").textContent = b.waist != null ? b.waist : "–";
+    var s = e.sleep || {};
+    $("sumSleep").textContent = sleepHours(s) != null ? sleepHours(s).toFixed(1) : "–";
+    var m = e.mental || {};
+    $("sumMood").textContent = m.mood ? MOOD_EMOJI[m.mood] : "–";
+    $("sumStress").textContent = m.stress != null ? m.stress : "–";
+    var tt = (e.training || []).reduce(function (a, x) { return a + (+x.min || 0); }, 0);
+    $("sumTrain").textContent = tt ? tt : "–";
+
+    // meal home
+    var meals = e.meals || {};
+    var lines = [];
+    MEAL_TYPES.forEach(function (mt) {
+      var mv = meals[mt.key];
+      if (mv && mv.text) lines.push('<div class="detail-row"><span class="d-lbl">' + mt.ico + ' ' + mt.label + '</span><span class="d-val">' + esc(mv.text) + (mv.cat ? ' ・' + mv.cat : '') + '</span></div>');
+    });
+    $("mealHome").innerHTML = lines.length ? lines.join("") : '<div class="empty">まだ記録がありません</div>';
+  }
+  function sleepHours(s) {
+    if (!s || !s.bed || !s.wake) return null;
+    var bh = toMin(s.bed), wh = toMin(s.wake);
+    var diff = wh - bh;
+    if (diff <= 0) diff += 1440;
+    return diff / 60;
+  }
+  function toMin(t) { var p = t.split(":"); return (+p[0]) * 60 + (+p[1]); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  function renderAll() {
+    setDateLabels();
+    renderHome();
+    renderBody();
+    renderMental();
+    if (activeView === "charts") renderCharts();
+  }
+
+  // ---------- save handlers ----------
+  $("saveBody").addEventListener("click", function () {
+    var e = dayEntry(current);
+    e.body = e.body || {};
+    e.body.weight = numOrNull($("inWeight").value);
+    e.body.waist = numOrNull($("inWaist").value);
+    e.body.fat = numOrNull($("inFat").value);
+    save(); renderHome(); toast("ボディを保存しました 🌸");
+  });
+  $("saveSleep").addEventListener("click", function () {
+    var e = dayEntry(current);
+    e.sleep = e.sleep || {};
+    e.sleep.bed = $("inBed").value || null;
+    e.sleep.wake = $("inWake").value || null;
+    save(); renderHome(); toast("睡眠を保存しました 😴");
+  });
+  $("sleepQ").addEventListener("click", function (ev) {
+    var c = ev.target.closest(".chip"); if (!c) return;
+    var q = +c.getAttribute("data-q");
+    var e = dayEntry(current); e.sleep = e.sleep || {};
+    e.sleep.quality = e.sleep.quality === q ? null : q;
+    save();
+    $("sleepQ").querySelectorAll(".chip").forEach(function (x) {
+      x.classList.toggle("active", +x.getAttribute("data-q") === e.sleep.quality);
+    });
+  });
+  $("trainType").addEventListener("click", function (ev) {
+    var c = ev.target.closest(".chip"); if (!c) return;
+    selectedTrainType = c.getAttribute("data-t");
+    $("trainType").querySelectorAll(".chip").forEach(function (x) { x.classList.remove("active"); });
+    c.classList.add("active");
+  });
+  $("addTrain").addEventListener("click", function () {
+    var min = numOrNull($("inTrainMin").value);
+    if (!selectedTrainType) { toast("種類を選んでください"); return; }
+    if (!min) { toast("時間を入力してください"); return; }
+    var e = dayEntry(current);
+    e.training = e.training || [];
+    e.training.push({ type: selectedTrainType, min: min });
+    save();
+    selectedTrainType = null;
+    $("trainType").querySelectorAll(".chip").forEach(function (x) { x.classList.remove("active"); });
+    $("inTrainMin").value = "";
+    renderTrainList(); renderHome();
+    toast("トレーニングを追加しました 🔥");
+  });
+  $("saveMeal").addEventListener("click", function () {
+    var e = dayEntry(current);
+    e.meals = e.meals || {};
+    MEAL_TYPES.forEach(function (m) {
+      e.meals[m.key] = { text: $("meal_" + m.key).value.trim(), cat: $("mealcat_" + m.key).value };
+    });
+    save(); renderHome(); toast("食事を保存しました 🍱");
+  });
+  $("pStart").addEventListener("click", function () {
+    var e = dayEntry(current); e.period = e.period || {};
+    e.period.start = !e.period.start; save(); renderPeriodStatus();
+  });
+  $("pEnd").addEventListener("click", function () {
+    var e = dayEntry(current); e.period = e.period || {};
+    e.period.end = !e.period.end; save(); renderPeriodStatus();
+  });
+
+  // mental
+  $("moods").addEventListener("click", function (ev) {
+    var b = ev.target.closest(".mood"); if (!b) return;
+    var v = +b.getAttribute("data-m");
+    var e = dayEntry(current); e.mental = e.mental || {};
+    e.mental.mood = e.mental.mood === v ? null : v;
+    save();
+    $("moods").querySelectorAll(".mood").forEach(function (x) {
+      x.classList.toggle("active", +x.getAttribute("data-m") === e.mental.mood);
+    });
+    renderHome();
+  });
+  $("stressSlider").addEventListener("input", function () {
+    var v = +this.value;
+    $("stressVal").textContent = v;
+    updateStressAlert(v);
+  });
+  $("stressSlider").addEventListener("change", function () {
+    var e = dayEntry(current); e.mental = e.mental || {};
+    e.mental.stress = +this.value; save(); renderHome();
+  });
+  $("saveMental").addEventListener("click", function () {
+    var e = dayEntry(current); e.mental = e.mental || {};
+    e.mental.stress = +$("stressSlider").value;
+    e.mental.gratitude = $("inGratitude").value.trim();
+    save(); renderHome(); toast("メンタル記録を保存しました 🌻");
+  });
+
+  function numOrNull(v) {
+    if (v === "" || v == null) return null;
+    var n = parseFloat(v);
+    return isNaN(n) ? null : n;
+  }
+
+  // ================= MEDITATION =================
+  var medDur = 60, medRemain = 60, medTimer = null, medRunning = false;
+  var R = 106, CIRC = 2 * Math.PI * R;
+  $("ringFg").style.strokeDasharray = CIRC;
+  $("ringFg").style.strokeDashoffset = 0;
+
+  function setMedDisplay() {
+    var mm = Math.floor(medRemain / 60), ss = medRemain % 60;
+    $("medTime").textContent = pad(mm) + ":" + pad(ss);
+    var pct = medRemain / medDur;
+    $("ringFg").style.strokeDashoffset = CIRC * (1 - pct);
+  }
+  $("durPick").addEventListener("click", function (ev) {
+    var b = ev.target.closest(".dur"); if (!b) return;
+    stopMed();
+    $("durPick").querySelectorAll(".dur").forEach(function (x) { x.classList.remove("active"); });
+    b.classList.add("active");
+    medDur = (+b.getAttribute("data-d")) * 60;
+    medRemain = medDur;
+    setMedDisplay();
+  });
+  $("medStart").addEventListener("click", function () {
+    if (medRunning) { pauseMed(); } else { startMed(); }
+  });
+  $("medReset").addEventListener("click", function () { stopMed(); medRemain = medDur; setMedDisplay(); $("medBreathe").textContent = ""; });
+
+  function startMed() {
+    medRunning = true;
+    $("medStart").textContent = "一時停止";
+    if ($("bgmToggle").checked) startBGM();
+    breatheLoop();
+    medTimer = setInterval(function () {
+      medRemain--;
+      setMedDisplay();
+      if (medRemain <= 0) { finishMed(); }
+    }, 1000);
+  }
+  function pauseMed() {
+    medRunning = false;
+    $("medStart").textContent = "再開";
+    clearInterval(medTimer);
+    stopBGM();
+    clearTimeout(breatheTimer);
+  }
+  function stopMed() {
+    medRunning = false;
+    $("medStart").textContent = "はじめる";
+    clearInterval(medTimer);
+    stopBGM();
+    clearTimeout(breatheTimer);
+  }
+  function finishMed() {
+    stopMed();
+    medRemain = medDur; setMedDisplay();
+    $("medBreathe").textContent = "おつかれさま 🌿";
+    chime();
+    toast("瞑想完了。よくがんばりました ✨");
+    setTimeout(function () { $("medBreathe").textContent = ""; }, 4000);
+  }
+
+  var breatheTimer;
+  function breatheLoop() {
+    var phases = [["吸って…", 4000], ["止めて…", 2000], ["吐いて…", 6000]];
+    var i = 0;
+    function step() {
+      if (!medRunning) return;
+      $("medBreathe").textContent = phases[i][0];
+      var dur = phases[i][1];
+      i = (i + 1) % phases.length;
+      breatheTimer = setTimeout(step, dur);
+    }
+    step();
+  }
+
+  // ---- Web Audio BGM: natural-ish noise + soft tone ----
+  var audioCtx = null, bgmNodes = null;
+  function ensureCtx() {
+    if (!audioCtx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+  function startBGM() {
+    var ctx = ensureCtx(); if (!ctx) return;
+    stopBGM();
+
+    // brown-ish noise buffer
+    var bufLen = ctx.sampleRate * 2;
+    var buffer = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+    var d = buffer.getChannelData(0);
+    var last = 0;
+    for (var i = 0; i < bufLen; i++) {
+      var white = Math.random() * 2 - 1;
+      last = (last + 0.02 * white) / 1.02;
+      d[i] = last * 3.2;
+    }
+    var noise = ctx.createBufferSource();
+    noise.buffer = buffer; noise.loop = true;
+
+    // gentle low-pass to make it "wind/wave"-like
+    var lp = ctx.createBiquadFilter();
+    lp.type = "lowpass"; lp.frequency.value = 620; lp.Q.value = 0.5;
+
+    // slow amplitude LFO -> wave breathing feel
+    var noiseGain = ctx.createGain();
+    noiseGain.gain.value = 0.12;
+    var lfo = ctx.createOscillator();
+    lfo.frequency.value = 0.1;
+    var lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.05;
+    lfo.connect(lfoGain); lfoGain.connect(noiseGain.gain);
+
+    // soft ambient tone (perfect fifth pad)
+    var oscA = ctx.createOscillator(); oscA.type = "sine"; oscA.frequency.value = 220;
+    var oscB = ctx.createOscillator(); oscB.type = "sine"; oscB.frequency.value = 330;
+    var toneGain = ctx.createGain(); toneGain.gain.value = 0.0;
+
+    var master = ctx.createGain();
+    master.gain.setValueAtTime(0, ctx.currentTime);
+    master.gain.linearRampToValueAtTime(0.9, ctx.currentTime + 2);
+
+    noise.connect(lp); lp.connect(noiseGain); noiseGain.connect(master);
+    oscA.connect(toneGain); oscB.connect(toneGain); toneGain.connect(master);
+    toneGain.gain.linearRampToValueAtTime(0.025, ctx.currentTime + 3);
+    master.connect(ctx.destination);
+
+    noise.start(); lfo.start(); oscA.start(); oscB.start();
+    bgmNodes = { noise: noise, lfo: lfo, oscA: oscA, oscB: oscB, master: master, ctx: ctx };
+  }
+  function stopBGM() {
+    if (!bgmNodes) return;
+    var n = bgmNodes; bgmNodes = null;
+    try {
+      var t = n.ctx.currentTime;
+      n.master.gain.cancelScheduledValues(t);
+      n.master.gain.setValueAtTime(n.master.gain.value, t);
+      n.master.gain.linearRampToValueAtTime(0, t + 0.6);
+      setTimeout(function () {
+        try { n.noise.stop(); n.lfo.stop(); n.oscA.stop(); n.oscB.stop(); } catch (e) {}
+      }, 700);
+    } catch (e) {}
+  }
+  function chime() {
+    var ctx = ensureCtx(); if (!ctx) return;
+    [523.25, 659.25, 783.99].forEach(function (f, i) {
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "sine"; o.frequency.value = f;
+      var t = ctx.currentTime + i * 0.18;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.18, t + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t); o.stop(t + 1.5);
+    });
+  }
+  $("bgmToggle").addEventListener("change", function () {
+    if (!medRunning) return;
+    if (this.checked) startBGM(); else stopBGM();
+  });
+
+  // ================= CHARTS =================
+  var chartRange = 7;
+  var chartClickMap = {};
+  $("rangeSeg").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button"); if (!b) return;
+    $("rangeSeg").querySelectorAll("button").forEach(function (x) { x.classList.remove("active"); });
+    b.classList.add("active");
+    chartRange = +b.getAttribute("data-r");
+    renderCharts();
+  });
+
+  function rangeKeys() {
+    var keys = [];
+    var d = keyToDate(current);
+    for (var i = chartRange - 1; i >= 0; i--) {
+      var dd = new Date(d); dd.setDate(dd.getDate() - i);
+      keys.push(fmtKey(dd));
+    }
+    return keys;
+  }
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function renderCharts() {
+    var keys = rangeKeys();
+    var textSub = cssVar("--text-sub") || "#999";
+    var border = cssVar("--border") || "#eee";
+    var coral = "#F47B8A", emerald = "#2ECC8B", gold = "#F4C542";
+
+    // body multi-line
+    drawMultiLine($("chBody"), keys, [
+      { color: coral, get: function (e) { return e.body ? e.body.weight : null; } },
+      { color: emerald, get: function (e) { return e.body ? e.body.waist : null; } },
+      { color: gold, get: function (e) { return e.body ? e.body.fat : null; } }
+    ], textSub, border);
+
+    // sleep bars
+    drawBars($("chSleep"), keys, function (e) { return sleepHours(e.sleep); }, emerald, textSub, border, "h");
+
+    // training bars
+    drawBars($("chTrain"), keys, function (e) {
+      return (e.training || []).reduce(function (a, x) { return a + (+x.min || 0); }, 0) || null;
+    }, coral, textSub, border, "分");
+
+    // mental dual line (mood 1-5, stress 1-10)
+    drawMultiLine($("chMental"), keys, [
+      { color: coral, get: function (e) { return e.mental ? e.mental.mood : null; }, min: 1, max: 5, axis: 0 },
+      { color: emerald, get: function (e) { return e.mental ? e.mental.stress : null; }, min: 1, max: 10, axis: 1 }
+    ], textSub, border);
+
+    hideDetail();
+  }
+
+  function setupCanvas(cv) {
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = cv.clientWidth || cv.parentElement.clientWidth - 36;
+    var cssH = parseInt(cv.getAttribute("height"), 10);
+    cv.width = cssW * dpr;
+    cv.height = cssH * dpr;
+    var ctx = cv.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: cssW, h: cssH };
+  }
+
+  function labelFor(k) {
+    var d = keyToDate(k);
+    if (chartRange <= 7) return ["日","月","火","水","木","金","土"][d.getDay()];
+    return (d.getDate());
+  }
+
+  function drawMultiLine(cv, keys, series, textSub, border) {
+    var s = setupCanvas(cv), ctx = s.ctx, W = s.w, H = s.h;
+    ctx.clearRect(0, 0, W, H);
+    var padL = 30, padR = 12, padT = 14, padB = 26;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+
+    // compute global min/max for series sharing default axis
+    var allVals = [];
+    series.forEach(function (se) {
+      keys.forEach(function (k) { var v = se.get(data[k] || {}); if (v != null) allVals.push(v); });
+    });
+    // grid
+    ctx.strokeStyle = border; ctx.lineWidth = 1;
+    for (var g = 0; g <= 4; g++) {
+      var y = padT + plotH * g / 4;
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    }
+    // x labels
+    ctx.fillStyle = textSub; ctx.font = "10px system-ui"; ctx.textAlign = "center";
+    var step = keys.length > 1 ? plotW / (keys.length - 1) : 0;
+    var lblEvery = chartRange > 7 ? Math.ceil(keys.length / 8) : 1;
+    keys.forEach(function (k, i) {
+      if (i % lblEvery === 0) ctx.fillText(labelFor(k), padL + step * i, H - 8);
+    });
+
+    if (!allVals.length && !series.some(function (se) { return se.min != null; })) {
+      noData(ctx, W, H, textSub); return;
+    }
+
+    // draw each series
+    chartClickMap[cv.id] = [];
+    series.forEach(function (se) {
+      var mn, mx;
+      if (se.min != null) { mn = se.min; mx = se.max; }
+      else {
+        mn = Math.min.apply(null, allVals); mx = Math.max.apply(null, allVals);
+        if (mn === mx) { mn -= 1; mx += 1; }
+        var pad = (mx - mn) * 0.15; mn -= pad; mx += pad;
+      }
+      var pts = [];
+      keys.forEach(function (k, i) {
+        var v = se.get(data[k] || {});
+        if (v == null) { pts.push(null); return; }
+        var x = padL + step * i;
+        var y = padT + plotH * (1 - (v - mn) / (mx - mn));
+        pts.push({ x: x, y: y, v: v, k: k });
+      });
+      // line
+      ctx.strokeStyle = se.color; ctx.lineWidth = 2.5; ctx.lineJoin = "round";
+      ctx.beginPath(); var started = false;
+      pts.forEach(function (p) {
+        if (!p) { started = false; return; }
+        if (!started) { ctx.moveTo(p.x, p.y); started = true; } else ctx.lineTo(p.x, p.y);
+      });
+      ctx.stroke();
+      // dots
+      pts.forEach(function (p) {
+        if (!p) return;
+        ctx.fillStyle = se.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 3.5, 0, 2 * Math.PI); ctx.fill();
+        chartClickMap[cv.id].push({ x: p.x, y: p.y, k: p.k });
+      });
+    });
+
+    attachClick(cv);
+  }
+
+  function drawBars(cv, keys, getter, color, textSub, border, unit) {
+    var s = setupCanvas(cv), ctx = s.ctx, W = s.w, H = s.h;
+    ctx.clearRect(0, 0, W, H);
+    var padL = 30, padR = 12, padT = 14, padB = 26;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var vals = keys.map(function (k) { return getter(data[k] || {}); });
+    var nums = vals.filter(function (v) { return v != null; });
+    ctx.strokeStyle = border; ctx.lineWidth = 1;
+    for (var g = 0; g <= 4; g++) {
+      var y = padT + plotH * g / 4;
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    }
+    ctx.fillStyle = textSub; ctx.font = "10px system-ui"; ctx.textAlign = "center";
+    var lblEvery = chartRange > 7 ? Math.ceil(keys.length / 8) : 1;
+    if (!nums.length) {
+      keys.forEach(function (k, i) {
+        if (i % lblEvery === 0) ctx.fillText(labelFor(k), padL + (plotW / keys.length) * (i + 0.5), H - 8);
+      });
+      noData(ctx, W, H, textSub); return;
+    }
+    var mx = Math.max.apply(null, nums) * 1.15;
+    if (mx <= 0) mx = 1;
+    var slot = plotW / keys.length;
+    var bw = Math.min(slot * 0.6, 26);
+    chartClickMap[cv.id] = [];
+    keys.forEach(function (k, i) {
+      var cx = padL + slot * (i + 0.5);
+      if (i % lblEvery === 0) ctx.fillText(labelFor(k), cx, H - 8);
+      var v = vals[i];
+      if (v == null) return;
+      var bh = plotH * (v / mx);
+      var by = padT + plotH - bh;
+      roundRect(ctx, cx - bw / 2, by, bw, bh, 5);
+      ctx.fillStyle = color; ctx.fill();
+      chartClickMap[cv.id].push({ x: cx, y: by, k: k, w: bw, h: bh });
+    });
+    attachClick(cv);
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    if (h < r) r = h < 0 ? 0 : h;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, 0);
+    ctx.arcTo(x, y + h, x, y, 0);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function noData(ctx, W, H, c) {
+    ctx.fillStyle = c; ctx.font = "12px system-ui"; ctx.textAlign = "center";
+    ctx.fillText("データがありません", W / 2, H / 2);
+  }
+
+  var clickAttached = {};
+  function attachClick(cv) {
+    if (clickAttached[cv.id]) return;
+    clickAttached[cv.id] = true;
+    cv.addEventListener("click", function (ev) {
+      var rect = cv.getBoundingClientRect();
+      var x = ev.clientX - rect.left, y = ev.clientY - rect.top;
+      var map = chartClickMap[cv.id] || [];
+      var best = null, bestD = 1e9;
+      map.forEach(function (p) {
+        var d;
+        if (p.w) { // bar: distance to bar column
+          d = Math.abs(x - p.x);
+          if (x >= p.x - p.w / 2 - 6 && x <= p.x + p.w / 2 + 6) d = 0;
+        } else {
+          d = Math.hypot(x - p.x, y - p.y);
+        }
+        if (d < bestD) { bestD = d; best = p; }
+      });
+      if (best && bestD < 40) showDetail(best.k);
+    });
+  }
+
+  function showDetail(k) {
+    var e = data[k] || {};
+    var t = dateLabelText(k);
+    $("detailTitle").textContent = t.main + " の記録";
+    var rows = [];
+    var b = e.body || {};
+    if (b.weight != null) rows.push(dr("⚖️ 体重", b.weight + " kg"));
+    if (b.waist != null) rows.push(dr("📏 ウエスト", b.waist + " cm"));
+    if (b.fat != null) rows.push(dr("💧 体脂肪率", b.fat + " %"));
+    var sh = sleepHours(e.sleep);
+    if (sh != null) rows.push(dr("😴 睡眠", sh.toFixed(1) + " 時間" + (e.sleep.quality ? "（質 " + e.sleep.quality + "/5）" : "")));
+    var tt = (e.training || []);
+    if (tt.length) {
+      var tot = tt.reduce(function (a, x) { return a + (+x.min || 0); }, 0);
+      rows.push(dr("🔥 運動", tot + " 分（" + tt.map(function (x) { return x.type; }).join("・") + "）"));
+    }
+    var m = e.mental || {};
+    if (m.mood) rows.push(dr("🙂 気分", MOOD_EMOJI[m.mood]));
+    if (m.stress != null) rows.push(dr("😰 ストレス", m.stress + " /10"));
+    var meals = e.meals || {};
+    MEAL_TYPES.forEach(function (mt) {
+      var mv = meals[mt.key];
+      if (mv && mv.text) rows.push(dr(mt.ico + " " + mt.label, esc(mv.text) + (mv.cat ? "・" + mv.cat : "")));
+    });
+    if (m.gratitude) rows.push(dr("🌻 感謝日記", esc(m.gratitude)));
+    var p = e.period || {};
+    if (p.start) rows.push(dr("🌷 生理", "開始"));
+    if (p.end) rows.push(dr("🌷 生理", "終了"));
+
+    $("detailBody").innerHTML = rows.length ? rows.join("") : '<div class="empty">この日の記録はありません</div>';
+    $("dayDetailCard").style.display = "block";
+    $("chartHint").style.display = "none";
+    $("dayDetailCard").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  function dr(l, v) { return '<div class="detail-row"><span class="d-lbl">' + l + '</span><span class="d-val">' + v + '</span></div>'; }
+  function hideDetail() {
+    $("dayDetailCard").style.display = "none";
+    $("chartHint").style.display = "block";
+  }
+
+  window.addEventListener("resize", function () { if (activeView === "charts") renderCharts(); });
+
+  // ---------- boot ----------
+  initTheme();
+  buildMealFields();
+  setMedDisplay();
+  renderAll();
+})();
+</script>
+</head>
+<body>
+</body>
+</html>
