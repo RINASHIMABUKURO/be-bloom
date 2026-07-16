@@ -1,3 +1,10 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Be Bloom</title>
 <style>
   :root {
@@ -43,6 +50,8 @@
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     transition: background 0.3s, color 0.3s;
+    overflow-x: hidden;
+    width: 100%;
   }
 
   #app {
@@ -51,6 +60,7 @@
     min-height: 100vh;
     background: var(--bg);
     position: relative;
+    width: 100%;
     padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 12px);
   }
 
@@ -535,13 +545,7 @@
         <label class="switch"><input type="checkbox" id="bgmToggle" checked><span class="track"></span></label>
         <span>🎵 自然音BGM</span>
       </div>
-      <div class="chips" id="bgmSounds" style="justify-content:center;margin-top:14px;">
-        <button class="chip green" data-sound="forest">🌲 森林</button>
-        <button class="chip green" data-sound="stream">💧 せせらぎ</button>
-        <button class="chip green" data-sound="birds">🐦 鳥の声</button>
-        <button class="chip green" data-sound="waves">🌊 波の音</button>
-        <button class="chip green" data-sound="breeze">🍃 そよ風</button>
-      </div>
+      <div style="text-align:center;margin-top:8px;font-size:13px;color:var(--text-sub)">🌲 森林 + 🐦 小鳥のさえずり</div>
     </div>
   </section>
 
@@ -1071,7 +1075,7 @@
   // ---- Web Audio BGM: natural soundscapes ----
   var BGM_KEY = "beBloomBGM_v1";
   var audioCtx = null, bgmNodes = null;
-  var bgmType = localStorage.getItem(BGM_KEY) || "forest";
+  var bgmType = "forest"; // 森林+小鳥のさえずり固定
 
   function ensureCtx() {
     if (!audioCtx) {
@@ -1218,20 +1222,29 @@
       return 0.2;
     }
 
-    // 🌲 forest (default): leaf-rustle noise + occasional birds
+    // 🌲 森林 + 🐦 小鳥のさえずり: 葉擦れ + そよ風 + 小鳥たちの声
+    // Layer 1: 葉擦れ（ピンクノイズ、バンドパス）
     var fsrc = noiseSource("pink");
-    var fbp = ctx.createBiquadFilter(); fbp.type = "bandpass"; fbp.frequency.value = 3000; fbp.Q.value = 0.5;
-    var fg = ctx.createGain(); fg.gain.value = 0.3;
-    var flfo2 = osc(0.15); var flfo2G = ctx.createGain(); flfo2G.gain.value = 0.18;
+    var fbp = ctx.createBiquadFilter(); fbp.type = "bandpass"; fbp.frequency.value = 2800; fbp.Q.value = 0.4;
+    var fg = ctx.createGain(); fg.gain.value = 0.22;
+    var flfo2 = osc(0.12); var flfo2G = ctx.createGain(); flfo2G.gain.value = 0.12;
     flfo2.connect(flfo2G); flfo2G.connect(fg.gain);
-    // a touch of low body so it feels like a wooded space
+    // Layer 2: 低い木々の響き（ブラウンノイズ）
     var flow = noiseSource("brown");
-    var flowLp = ctx.createBiquadFilter(); flowLp.type = "lowpass"; flowLp.frequency.value = 320;
-    var flowG = ctx.createGain(); flowG.gain.value = 0.18;
+    var flowLp = ctx.createBiquadFilter(); flowLp.type = "lowpass"; flowLp.frequency.value = 280;
+    var flowG = ctx.createGain(); flowG.gain.value = 0.14;
+    // Layer 3: 微かなそよ風（ブラウンノイズ、ゆっくりうねる）
+    var breezeS = noiseSource("brown");
+    var breezeLp = ctx.createBiquadFilter(); breezeLp.type = "lowpass"; breezeLp.frequency.value = 420; breezeLp.Q.value = 0.3;
+    var breezeG = ctx.createGain(); breezeG.gain.value = 0.08;
+    var breezeLfo = osc(0.07); var breezeLfoG = ctx.createGain(); breezeLfoG.gain.value = 0.06;
+    breezeLfo.connect(breezeLfoG); breezeLfoG.connect(breezeG.gain);
     fsrc.connect(fbp); fbp.connect(fg); fg.connect(master);
     flow.connect(flowLp); flowLp.connect(flowG); flowG.connect(master);
-    fsrc.start(t); flow.start(t); flfo2.start(t);
-    scheduleChirps(ctx, master, nodes, 3.5, 7.5);
+    breezeS.connect(breezeLp); breezeLp.connect(breezeG); breezeG.connect(master);
+    fsrc.start(t); flow.start(t); flfo2.start(t); breezeS.start(t); breezeLfo.start(t);
+    // 小鳥のさえずり（頻度を上げて森の雰囲気に）
+    scheduleChirps(ctx, master, nodes, 2.0, 5.0);
     return 0.2;
   }
 
@@ -1278,18 +1291,7 @@
     if (!medRunning) return;
     if (this.checked) startBGM(); else stopBGM();
   });
-  function setActiveBgmChip() {
-    $("bgmSounds").querySelectorAll(".chip").forEach(function (c) {
-      c.classList.toggle("active", c.getAttribute("data-sound") === bgmType);
-    });
-  }
-  $("bgmSounds").addEventListener("click", function (ev) {
-    var c = ev.target.closest(".chip"); if (!c) return;
-    bgmType = c.getAttribute("data-sound");
-    localStorage.setItem(BGM_KEY, bgmType);
-    setActiveBgmChip();
-    if (medRunning && $("bgmToggle").checked) startBGM();
-  });
+  // BGM選択UI削除済み（森林+小鳥固定）
 
   // ================= CHARTS =================
   var chartRange = 7;
@@ -1554,7 +1556,6 @@
   initTheme();
   buildMealFields();
   setMedDisplay();
-  setActiveBgmChip();
   renderAll();
 })();
 </script>
